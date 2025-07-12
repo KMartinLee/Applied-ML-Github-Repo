@@ -1,6 +1,5 @@
 import pandas as pd
 import re
-
 from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -15,8 +14,22 @@ warnings.filterwarnings('ignore')
 
 # Load the uploaded Excel file
 file_path = "/Users/t.b.k.bihari/Documents/GitHub/Applied-ML-Github-Repo/tweet_market_impact.xlsx"
-xls = pd.ExcelFile(file_path)
 
+# Check if file exists before loading
+import os
+if not os.path.exists(file_path):
+    print(f"❌ File not found at: {file_path}")
+    print("Please check the file location and update the path.")
+    # Alternative: Look for the file in current directory
+    current_dir_file = "tweet_market_impact.xlsx"
+    if os.path.exists(current_dir_file):
+        print(f"✅ Found file in current directory: {current_dir_file}")
+        file_path = current_dir_file
+    else:
+        print("Please ensure the Excel file is in the same folder as your Python script.")
+        exit()
+
+xls = pd.ExcelFile(file_path)
 df = xls.parse('Sheet1')
 
 # Display the first few rows to understand the structure
@@ -88,8 +101,22 @@ df_clean['Tweet'] = df_clean['Tweet'].apply(clean_tweet_text)
 # Remove rows where tweet becomes empty after cleaning
 df_clean = df_clean[df_clean['Tweet'].str.len() > 0]
 
-# Define binary classification target: 'Buy' (market up), 'Sell' (market down or unchanged)
-df_clean['Label'] = df_clean[target_horizon].apply(lambda x: 'Buy' if x > 0 else 'Sell')
+# Define three-class classification target with neutral zone
+def classify_market_impact(x):
+    """
+    Classify market impact into three categories:
+    - Buy: movement > 5 basis points (0.05%)
+    - Sell: movement < -5 basis points (-0.05%)  
+    - Neutral: movement between -5 and +5 basis points
+    """
+    if x > 0.0005:  # > 5 basis points
+        return 'Buy'
+    elif x < -0.0005:  # < -5 basis points
+        return 'Sell'
+    else:  # between -5 and +5 basis points
+        return 'Neutral'
+
+df_clean['Label'] = df_clean[target_horizon].apply(classify_market_impact)
 
 # Display class balance and a sample
 label_counts = df_clean['Label'].value_counts()
@@ -128,8 +155,15 @@ X_account = ohe.fit_transform(df_clean[['Twitter_acc']])
 print("Combining features...")
 X = hstack([X_text, X_account])
 
-# Target variable - Convert to binary (0/1) for MLP
-y = (df_clean['Label'] == 'Buy').astype(int)  # 1 for Buy, 0 for Sell
+# Target variable - Convert to numeric labels for multi-class MLP (0=Sell, 1=Neutral, 2=Buy)
+label_mapping = {'Sell': 0, 'Neutral': 1, 'Buy': 2}
+y = df_clean['Label'].map(label_mapping)
+
+print(f"Label distribution after mapping:")
+for label, code in label_mapping.items():
+    count = (y == code).sum()
+    percentage = (count / len(y)) * 100
+    print(f"  {label} ({code}): {count} ({percentage:.1f}%)")
 
 # Train-test split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
@@ -137,8 +171,15 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratif
 print("-" * 60)
 print(f"Training set shape: {X_train.shape}")
 print(f"Test set shape: {X_test.shape}")
-print(f"Training class distribution: Buy={y_train.sum()}, Sell={len(y_train)-y_train.sum()}")
-print(f"Test class distribution: Buy={y_test.sum()}, Sell={len(y_test)-y_test.sum()}")
+print(f"Training class distribution:")
+for label, code in label_mapping.items():
+    count = (y_train == code).sum()
+    print(f"  {label}: {count}")
+    
+print(f"Test class distribution:")
+for label, code in label_mapping.items():
+    count = (y_test == code).sum()
+    print(f"  {label}: {count}")
 print("-" * 60)
 
 #----------------------------------------------------- Step 4: MLP Neural Network Training and Evaluation-----------------------------------------------------
@@ -170,12 +211,13 @@ print(f"Final training loss: {mlp_model.loss_:.6f}")
 
 # Make predictions
 print("Making predictions...")
-y_pred_proba = mlp_model.predict_proba(X_test)[:, 1]  # Probability of 'Buy' class
+y_pred_proba = mlp_model.predict_proba(X_test)  # Probabilities for all 3 classes
 y_pred = mlp_model.predict(X_test)
 
 # Convert back to original labels for reporting
-y_test_labels = ['Buy' if label == 1 else 'Sell' for label in y_test]
-y_pred_labels = ['Buy' if pred == 1 else 'Sell' for pred in y_pred]
+reverse_label_mapping = {0: 'Sell', 1: 'Neutral', 2: 'Buy'}
+y_test_labels = [reverse_label_mapping[label] for label in y_test]
+y_pred_labels = [reverse_label_mapping[pred] for pred in y_pred]
 
 #----------------------------------------------------- Step 5: Model Evaluation and Performance Analysis-----------------------------------------------------
 
@@ -197,12 +239,14 @@ if abs(train_accuracy - accuracy) > 0.1:
 else:
     print("✅ Good generalization performance")
 
-# ROC AUC Score
+# ROC AUC Score - For multi-class, use macro or weighted average
 try:
-    roc_auc = roc_auc_score(y_test, y_pred_proba)
-    print(f"ROC AUC Score: {roc_auc:.4f}")
-except:
-    print("ROC AUC: Could not calculate")
+    # For multi-class, we can use one-vs-rest ROC AUC
+    from sklearn.metrics import roc_auc_score
+    roc_auc = roc_auc_score(y_test, y_pred_proba, multi_class='ovr', average='weighted')
+    print(f"Multi-class ROC AUC Score (weighted): {roc_auc:.4f}")
+except Exception as e:
+    print(f"ROC AUC: Could not calculate - {e}")
 
 # Detailed classification report
 print("\nDetailed Classification Report:")
@@ -210,25 +254,28 @@ print("-" * 50)
 report = classification_report(y_test_labels, y_pred_labels, output_dict=True)
 print(classification_report(y_test_labels, y_pred_labels))
 
-# Confusion Matrix Analysis
-conf_matrix = confusion_matrix(y_test_labels, y_pred_labels, labels=['Sell', 'Buy'])
-print("\nConfusion Matrix:")
-print("-" * 30)
-print("                Predicted")
-print("              Sell    Buy")
-print(f"Actual Sell   {conf_matrix[0,0]:4d}   {conf_matrix[0,1]:4d}")
-print(f"       Buy    {conf_matrix[1,0]:4d}   {conf_matrix[1,1]:4d}")
+# Confusion Matrix Analysis for 3 classes
+conf_matrix = confusion_matrix(y_test_labels, y_pred_labels, labels=['Sell', 'Neutral', 'Buy'])
+print("\nConfusion Matrix (3x3):")
+print("-" * 40)
+print("                   Predicted")
+print("              Sell  Neutral  Buy")
+print(f"Actual Sell   {conf_matrix[0,0]:4d}    {conf_matrix[0,1]:4d}   {conf_matrix[0,2]:4d}")
+print(f"       Neutral{conf_matrix[1,0]:4d}    {conf_matrix[1,1]:4d}   {conf_matrix[1,2]:4d}")
+print(f"       Buy    {conf_matrix[2,0]:4d}    {conf_matrix[2,1]:4d}   {conf_matrix[2,2]:4d}")
 
-# Calculate and display key metrics
-tn, fp, fn, tp = conf_matrix.ravel()
-precision_buy = tp / (tp + fp) if (tp + fp) > 0 else 0
-recall_buy = tp / (tp + fn) if (tp + fn) > 0 else 0
-precision_sell = tn / (tn + fn) if (tn + fn) > 0 else 0
-recall_sell = tn / (tn + fp) if (tn + fp) > 0 else 0
-
-print(f"\nClass-specific Performance:")
-print(f"Buy Precision: {precision_buy:.4f}   Buy Recall: {recall_buy:.4f}")
-print(f"Sell Precision: {precision_sell:.4f}  Sell Recall: {recall_sell:.4f}")
+# Calculate class-specific metrics
+print(f"\nDetailed Class Performance:")
+for i, class_name in enumerate(['Sell', 'Neutral', 'Buy']):
+    tp = conf_matrix[i, i]  # True positives for this class
+    fp = conf_matrix[:, i].sum() - tp  # False positives
+    fn = conf_matrix[i, :].sum() - tp  # False negatives
+    
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    
+    print(f"{class_name:8s}: Precision={precision:.4f}, Recall={recall:.4f}, F1={f1:.4f}")
 
 #----------------------------------------------------- Step 6: Cross-Validation Analysis-----------------------------------------------------
 
