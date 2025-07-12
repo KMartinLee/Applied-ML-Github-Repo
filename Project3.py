@@ -1,10 +1,14 @@
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import OneHotEncoder
 from scipy.sparse import hstack
 import lightgbm as lgb
+import xgboost as xgb
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+import re
+import shap
 #--------------------------------------------------step 0: Import File.--------------------------------------------------
 
 # Load the uploaded Excel file
@@ -85,7 +89,13 @@ df_clean['Tweet'] = df_clean['Tweet'].apply(clean_tweet_text)
 df_clean = df_clean[df_clean['Tweet'].str.len() > 0]
 
 # Define binary classification target: 'Buy' (market up), 'Sell' (market down or unchanged)
-df_clean['Label'] = df_clean[target_horizon].apply(lambda x: 'Buy' if x > 0 else 'Sell')
+df_clean['Label'] = df_clean[target_horizon].apply(
+    lambda x: 'Buy' if x > 0.0005 else ('Sell' if x < -0.0005 else 'Neutral')
+)
+
+
+
+
 
 # Display class balance and a sample
 label_counts = df_clean['Label'].value_counts()
@@ -134,35 +144,116 @@ print("-" * 60)
 #----------------------------------------------------- Step 4: we’ll train a Gradient Boosting classifier (LightGBM), evaluate performance-----------------------------------------------------
 
 
-# Prepare LightGBM dataset
-train_data = lgb.Dataset(X_train, label=(y_train == 'Buy').astype(int)) #Converts X_train (features) and y_train (labels) into a LightGBM Dataset.
-test_data = lgb.Dataset(X_test, label=(y_test == 'Buy').astype(int), reference=train_data) #Same for test data.
 
-#  Set model parameters:
-params = {
-    'objective': 'binary',              # Binary classification
-    'metric': 'binary_logloss',        # Log loss (lower is better)
-    'verbosity': -1,                   # Suppress logging output
-    'boosting_type': 'gbdt',           # Gradient Boosted Decision Trees
-    'num_leaves': 31,                  # Max leaf nodes per tree (controls model complexity)
-    'learning_rate': 0.05,             # Step size shrinkage
-    'feature_fraction': 0.9            # Use 90% of features per tree (adds randomness for generalization)
+
+from sklearn.preprocessing import LabelEncoder
+
+# Encode y labels: 'Buy' → 0, 'Neutral' → 1, 'Sell' → 2 (for example)
+le = LabelEncoder()
+y_encoded = le.fit_transform(y)  # Store this for inverse_transform if needed
+
+# Train-test split
+X_train, X_test, y_train_enc, y_test_enc = train_test_split(X, y_encoded, test_size=0.2, stratify=y_encoded, random_state=42)
+
+# Convert to DMatrix
+dtrain = xgb.DMatrix(X_train, label=y_train_enc)
+dtest = xgb.DMatrix(X_test, label=y_test_enc)
+
+# Multi-class parameters
+xgb_params = {
+    'objective': 'multi:softprob',
+    'num_class': 3,
+    'eval_metric': 'mlogloss',
+    'learning_rate': 0.05,
+    'max_depth': 6,
+    'subsample': 0.8,
+    'colsample_bytree': 0.8,
+    'verbosity': 0
 }
 
-# Trains a LightGBM model using the training data.
-gbm_model = lgb.train(params, train_data, valid_sets=[test_data], num_boost_round=100, early_stopping_rounds=10)
+# Train model
+xgb_model = xgb.train(params=xgb_params, dtrain=dtrain, num_boost_round=100,
+                      evals=[(dtest, 'eval')], early_stopping_rounds=10)
 
-# Predict on test set
-y_pred_proba = gbm_model.predict(X_test) #Predicts probabilities for the positive class ('Buy' → 1).
-y_pred = ['Buy' if p > 0.5 else 'Sell' for p in y_pred_proba]
+# Predict class probabilities
+y_pred_probs = xgb_model.predict(dtest)  # shape: (n_samples, 3)
 
-# Evaluate
-"""Generates precision, recall, F1-score for each class.
-output_dict=True returns it as a dictionary instead of a string."""
-report = classification_report(y_test, y_pred, output_dict=True)
-accuracy = accuracy_score(y_test, y_pred)
-conf_matrix = confusion_matrix(y_test, y_pred)
+# Convert to class labels
+y_pred_enc = y_pred_probs.argmax(axis=1)
+y_pred_labels = le.inverse_transform(y_pred_enc)
 
-print(report, accuracy, conf_matrix)
+"""
+Precision: Of all the predictions for class X, how many were correct?
+    Precision = TP / (TP + FP)
+
+Recall: Of all actual samples of class X, how many did we catch?
+    Recall = TP / (TP + FN)
+
+F1-score: Harmonic mean of precision and recall (balances both).
+
+Support: Number of true samples for that class in test data."""
+print(classification_report(le.inverse_transform(y_test_enc), y_pred_labels))
+
+"""Gives a 2D matrix showing how actual vs. predicted classes align.
+Assuming class order is: ['Buy', 'Neutral', 'Sell']
+    Each row = actual class
+    Each column = predicted clas"""
+print(confusion_matrix(le.inverse_transform(y_test_enc), y_pred_labels))
+
+"""Means: 67% of the total predictions matched the true labels."""
+print("Accuracy:", accuracy_score(le.inverse_transform(y_test_enc), y_pred_labels))
+
+
+#----------------------------------------------------- Step 5: SHAP Feature Importance.-----------------------------------------------------
+
+"""We’ll extract:
+
+Top words driving 'Buy' or 'Sell'.
+
+Top accounts with highest impact (via their OHE features).
+
+Proceeding with SHAP explanation for the trained XGBoost model"""
+
+
+# Use a TreeExplainer for XGBoost
+explainer = shap.TreeExplainer(xgb_model)
+
+# SHAP expects a dense or sparse matrix, not a DMatrix
+shap_values = explainer.shap_values(X_test)
+
+# Combine feature names
+# Recombine final feature names
+tfidf_features = list(tfidf.get_feature_names_out())
+account_features = list(ohe.get_feature_names_out(['Twitter_acc']))
+feature_names = tfidf_features + account_features
+
+# Convert sparse matrix to dense (or just subset the columns SHAP returned)
+X_test_dense = X_test.toarray()
+
+# Get SHAP values
+explainer = shap.TreeExplainer(xgb_model)
+shap_values = explainer.shap_values(X_test_dense)
+
+# Handle multiclass
+if isinstance(shap_values, list):
+    shap_array = np.array([np.abs(sv).mean(axis=0) for sv in shap_values])
+    mean_abs_shap = shap_array.mean(axis=0)
+else:
+    mean_abs_shap = np.abs(shap_values).mean(axis=0)
+
+# Flatten and verify
+mean_abs_shap = np.asarray(mean_abs_shap).flatten()
+print("After fix:")
+print("Feature names:", len(feature_names))
+print("SHAP values:", len(mean_abs_shap))
+assert len(feature_names) == len(mean_abs_shap)
+
+
+
+top_features_df = pd.DataFrame({
+    'feature': feature_names,
+    'mean_abs_shap': mean_abs_shap
+})
+
 
 
