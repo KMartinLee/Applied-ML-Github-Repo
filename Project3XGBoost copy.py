@@ -36,7 +36,7 @@ def clean_tweet_text(text):
     return re.sub(r'\s+', ' ', text).strip()
 
 # -------------------------------------------------- Load and Preprocess -------------------------------------------------- #
-file_path = "/Users/kilian_1/Desktop/Education/Bayes_MSc_Energy_Trade_and_Finance/Term_3/Applied-ML-Github-Repo/tweet_market_impact.xlsx"
+file_path = "tweet_market_impact.xlsx"
 df = pd.read_excel(file_path, sheet_name=0)
 
 df['Tweet_Original'] = df['Tweet']

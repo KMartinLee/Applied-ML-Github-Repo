@@ -34,7 +34,7 @@ def clean_tweet_text(text):
     return re.sub(r'\s+', ' ', text).strip()
 
 # -------------------------------------------------- Load Dataset -------------------------------------------------- #
-file_path = "/Users/kilian_1/Desktop/Education/Bayes_MSc_Energy_Trade_and_Finance/Term_3/Applied-ML-Github-Repo/tweet_market_impact.xlsx"
+file_path = "tweet_market_impact.xlsx"
 df = pd.read_excel(file_path)
 df['Tweet'] = df['Tweet'].apply(clean_tweet_text)
 df = df[df['Tweet'].str.len() > 0]
@@ -130,13 +130,13 @@ for target_horizon in mi_cols:
     rep = classification_report(y_te, preds, target_names=label_enc.classes_, output_dict=True)
     conf = confusion_matrix(y_te, preds)
 
-    with open("lstm_results.txt", "a") as f:
+    '''with open("lstm_results.txt", "a") as f:
         f.write(f"\n{'='*40}\nResults for: {target_horizon}\n{'='*40}\n")
         f.write("Classification Report:\n")
         f.write(classification_report(y_te, preds, target_names=label_enc.classes_))
         f.write("\nConfusion Matrix:\n")
         f.write(np.array2string(conf, separator=', '))
-        f.write(f"\nAccuracy: {acc:.4f}\n")
+        f.write(f"\nAccuracy: {acc:.4f}\n")'''
 
 
     performance_summary.append({
