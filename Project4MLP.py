@@ -14,7 +14,7 @@ warnings.filterwarnings('ignore')
 #--------------------------------------------------step 0: Import File.--------------------------------------------------
 
 # Load the uploaded Excel file
-file_path = "/Users/t.b.k.bihari/Documents/GitHub/Applied-ML-Github-Repo/Applied-ML-Github-Repo/tweet_market_impact.xlsx"
+file_path = "/Users/t.b.k.bihari/Documents/GitHub/Applied-ML-Github-Repo/tweet_market_impact.xlsx"
 xls = pd.ExcelFile(file_path)
 
 df = xls.parse('Sheet1')
