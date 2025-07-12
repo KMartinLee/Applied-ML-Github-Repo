@@ -72,32 +72,38 @@ print("-" * 60)
 
 
 # Prepare LightGBM dataset
-train_data = lgb.Dataset(X_train, label=(y_train == 'Buy').astype(int))
-test_data = lgb.Dataset(X_test, label=(y_test == 'Buy').astype(int), reference=train_data)
+train_data = lgb.Dataset(X_train, label=(y_train == 'Buy').astype(int)) #Converts X_train (features) and y_train (labels) into a LightGBM Dataset.
+test_data = lgb.Dataset(X_test, label=(y_test == 'Buy').astype(int), reference=train_data) #Same for test data.
 
-# Model parameters
+#  Set model parameters:
 params = {
-    'objective': 'binary',
-    'metric': 'binary_logloss',
-    'verbosity': -1,
-    'boosting_type': 'gbdt',
-    'num_leaves': 31,
-    'learning_rate': 0.05,
-    'feature_fraction': 0.9
+    'objective': 'binary',              # Binary classification
+    'metric': 'binary_logloss',        # Log loss (lower is better)
+    'verbosity': -1,                   # Suppress logging output
+    'boosting_type': 'gbdt',           # Gradient Boosted Decision Trees
+    'num_leaves': 31,                  # Max leaf nodes per tree (controls model complexity)
+    'learning_rate': 0.05,             # Step size shrinkage
+    'feature_fraction': 0.9            # Use 90% of features per tree (adds randomness for generalization)
 }
 
-# Train model
+# Trains a LightGBM model using the training data.
 gbm_model = lgb.train(params, train_data, valid_sets=[test_data], num_boost_round=100, early_stopping_rounds=10)
 
 # Predict on test set
-y_pred_proba = gbm_model.predict(X_test)
+y_pred_proba = gbm_model.predict(X_test) #Predicts probabilities for the positive class ('Buy' → 1).
 y_pred = ['Buy' if p > 0.5 else 'Sell' for p in y_pred_proba]
 
 # Evaluate
+"""Generates precision, recall, F1-score for each class.
+output_dict=True returns it as a dictionary instead of a string."""
 report = classification_report(y_test, y_pred, output_dict=True)
-accuracy = accuracy_score(y_test, y_pred)
-conf_matrix = confusion_matrix(y_test, y_pred)
 
-print(report, accuracy, conf_matrix)
+accuracy = accuracy_score(y_test, y_pred) #Computes overall accuracy (correct predictions / total predictions).
+
+conf_matrix = confusion_matrix(y_test, y_pred) #Returns a confusion matrix (true/false positives/negatives).
+print("Here are the overall results: ")
+print(f"Here is the report for {target_horizon} : {report}")
+print(f"Here is the accuary for {target_horizon} : {accuracy}")
+print(f"Here is the confusion matrix for {target_horizon}: {conf_matrix}")
 
 
