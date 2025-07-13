@@ -182,3 +182,42 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()'''
 
+
+
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+
+st.title("📊 XGBoost Model Performance")
+
+@st.cache_data
+def load_data():
+    return pd.read_csv("xgboost_performance_summary.csv")
+
+df = load_data()
+
+st.dataframe(df, use_container_width=True)
+
+# Accuracy
+st.subheader("Model Accuracy Across Horizons")
+fig1, ax1 = plt.subplots()
+ax1.plot(df['Horizon'], df['Accuracy'], marker='o')
+ax1.set_title("Accuracy")
+ax1.set_ylabel("Accuracy")
+ax1.set_xticks(range(len(df)))
+ax1.set_xticklabels(df['Horizon'], rotation=45)
+ax1.grid(True)
+st.pyplot(fig1)
+
+# F1 Scores
+st.subheader("F1 Scores (Buy vs Sell)")
+fig2, ax2 = plt.subplots()
+ax2.plot(df['Horizon'], df['F1_Buy'], label='F1 Buy', marker='o')
+ax2.plot(df['Horizon'], df['F1_Sell'], label='F1 Sell', marker='o')
+ax2.set_title("F1 Scores")
+ax2.set_ylabel("F1 Score")
+ax2.set_xticks(range(len(df)))
+ax2.set_xticklabels(df['Horizon'], rotation=45)
+ax2.legend()
+ax2.grid(True)
+st.pyplot(fig2)
