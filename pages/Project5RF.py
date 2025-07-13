@@ -13,7 +13,8 @@ warnings.filterwarnings('ignore')
 #--------------------------------------------------step 0: Import File.--------------------------------------------------
 
 # Load the uploaded Excel file - Updated path for your system
-file_path = "/Users/t.b.k.bihari/Documents/GitHub/Applied-ML-Github-Repo/tweet_market_impact.xlsx"
+#file_path = "/Users/t.b.k.bihari/Documents/GitHub/Applied-ML-Github-Repo/tweet_market_impact.xlsx"
+file_path = "tweet_market_impact.xlsx"
 
 # Check if file exists before loading
 import os
