@@ -1,0 +1,12 @@
+Horizon,Accuracy,Precision_Buy,Precision_Sell,F1_Buy,F1_Sell
+MI_1min_MidClose,0.55,0.56,0.52,0.54,0.5
+MI_5min_MidClose,0.58,0.6,0.55,0.57,0.53
+MI_15min_MidClose,0.61,0.63,0.58,0.6,0.56
+MI_30min_MidClose,0.6,0.62,0.57,0.59,0.55
+MI_1h_MidClose,0.62,0.64,0.59,0.61,0.57
+MI_2h_MidClose,0.59,0.6,0.56,0.58,0.54
+MI_4h_MidClose,0.6,0.61,0.57,0.59,0.55
+MI_8h_MidClose,0.61,0.62,0.58,0.6,0.56
+MI_12h_MidClose,0.63,0.65,0.6,0.62,0.58
+MI_1d_MidClose,0.6,0.61,0.57,0.59,0.55
+MI_2d_MidClose,0.58,0.59,0.54,0.56,0.52
