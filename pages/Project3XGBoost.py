@@ -113,29 +113,7 @@ for target_horizon in mi_cols:
         f.write(f"Accuracy: {acc:.4f}\n")
 
 
-    # -------------------------------------------------- SHAP Feature Importances -------------------------------------------------- #
-    '''explainer = shap.TreeExplainer(model)
-    X_test_dense = X_test.toarray()
-    shap_values = explainer.shap_values(X_test_dense)
-
-    tfidf_features = list(tfidf.get_feature_names_out())
-    account_features = list(ohe.get_feature_names_out(['Twitter_acc']))
-    feature_names = tfidf_features + account_features
-
-    if isinstance(shap_values, list):
-        shap_array = np.array([np.abs(sv).mean(axis=0) for sv in shap_values])
-        mean_abs_shap = shap_array.mean(axis=0)
-    else:
-        mean_abs_shap = np.abs(shap_values).mean(axis=0)
-
-    top_features_df = pd.DataFrame({
-        'feature': feature_names,
-        'mean_abs_shap': mean_abs_shap
-    }).sort_values(by='mean_abs_shap', ascending=False).head(10)
-
-    print("Top 10 SHAP Features:")
-    print(top_features_df.to_string(index=False))
-'''
+    # -------------------------------------------------- PLOT -------------------------------------------------- #
 
 import matplotlib.pyplot as plt
 
@@ -160,8 +138,11 @@ performance_summary = pd.DataFrame({
     'F1_Sell': [0.50, 0.53, 0.56, 0.55, 0.57, 0.54, 0.55, 0.56, 0.58, 0.55, 0.52]
 })
 
+performance_summary.to_csv("XGBoost_performance_summary.csv", index=False)
+
+
 # Plotting Accuracy across Horizons
-'''plt.figure(figsize=(10, 5))
+plt.figure(figsize=(10, 5))
 plt.plot(performance_summary['Horizon'], performance_summary['Accuracy'], marker='o')
 plt.title("Model Accuracy Across Market Impact Horizons")
 plt.xticks(rotation=45)
@@ -180,44 +161,5 @@ plt.ylabel("F1 Score")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
-plt.show()'''
+plt.show()
 
-
-
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-
-st.title("📊 XGBoost Model Performance")
-
-@st.cache_data
-def load_data():
-    return pd.read_csv("xgboost_performance_summary.csv")
-
-df = load_data()
-
-st.dataframe(df, use_container_width=True)
-
-# Accuracy
-st.subheader("Model Accuracy Across Horizons")
-fig1, ax1 = plt.subplots()
-ax1.plot(df['Horizon'], df['Accuracy'], marker='o')
-ax1.set_title("Accuracy")
-ax1.set_ylabel("Accuracy")
-ax1.set_xticks(range(len(df)))
-ax1.set_xticklabels(df['Horizon'], rotation=45)
-ax1.grid(True)
-st.pyplot(fig1)
-
-# F1 Scores
-st.subheader("F1 Scores (Buy vs Sell)")
-fig2, ax2 = plt.subplots()
-ax2.plot(df['Horizon'], df['F1_Buy'], label='F1 Buy', marker='o')
-ax2.plot(df['Horizon'], df['F1_Sell'], label='F1 Sell', marker='o')
-ax2.set_title("F1 Scores")
-ax2.set_ylabel("F1 Score")
-ax2.set_xticks(range(len(df)))
-ax2.set_xticklabels(df['Horizon'], rotation=45)
-ax2.legend()
-ax2.grid(True)
-st.pyplot(fig2)
