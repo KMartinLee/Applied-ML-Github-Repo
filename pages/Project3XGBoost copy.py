@@ -161,7 +161,7 @@ performance_summary = pd.DataFrame({
 })
 
 # Plotting Accuracy across Horizons
-plt.figure(figsize=(10, 5))
+'''plt.figure(figsize=(10, 5))
 plt.plot(performance_summary['Horizon'], performance_summary['Accuracy'], marker='o')
 plt.title("Model Accuracy Across Market Impact Horizons")
 plt.xticks(rotation=45)
@@ -180,4 +180,5 @@ plt.ylabel("F1 Score")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
-plt.show()
+plt.show()'''
+

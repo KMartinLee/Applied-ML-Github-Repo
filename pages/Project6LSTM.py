@@ -151,7 +151,7 @@ for target_horizon in mi_cols:
 # -------------------------------------------------- Plot Results -------------------------------------------------- #
 summary_df = pd.DataFrame(performance_summary)
 
-plt.figure(figsize=(10, 5))
+'''plt.figure(figsize=(10, 5))
 plt.plot(summary_df['Horizon'], summary_df['Accuracy'], marker='o')
 plt.title("LSTM Accuracy Across Market Impact Horizons")
 plt.xticks(rotation=45)
@@ -169,4 +169,6 @@ plt.ylabel("F1 Score")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
-plt.show()
+plt.show()'''
+
+
