@@ -492,5 +492,5 @@ for horizon in horizons:
 
 performance_summary_df = pd.DataFrame(performance_summary)
 
-
+performance_summary_df.to_csv("RF_performance_summary.csv", index=False)
 

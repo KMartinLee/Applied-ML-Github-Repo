@@ -1,14 +1,71 @@
 import streamlit as st
-
+import pandas as pd
 st.set_page_config(page_title="ML Dashboard", layout="wide")
 
-st.title("🧠 Applied Machine Learning Dashboard")
+st.title("Market sentiment and market impact prediction models on crude oil prices")
 st.markdown("""
-Welcome to the interactive ML dashboard.
+### 📊 Custom Tweet-Based Dataset for Crude Oil Market Analysis
 
-Use the sidebar to navigate between different model results:
-- XGBoost
-- LSTM
-- MLP
-- Random Forest
+We constructed a unique dataset to study the short-term impact of tweets on crude oil prices. Below is an overview:
+
+---
+
+- 🧾 **Data Source:**  
+  Collected tweets from curated Twitter accounts influential in the energy and financial sectors.""")
+
+
+accounts = [
+    "BurggrabenH_tweets", "IDF_tweets", "IEA_tweets", "IRIran_Military_tweets",
+    "IntelDoge_tweets", "IsraeliPM_tweets", "JavierBlas_tweets", "OPECSecretariat_tweets",
+    "OSE_Yemen_tweets", "OilSheppard_tweets", "POTUS_tweets", "SStapczynski_tweets",
+    "TrumpDailyPosts_tweets", "WhiteHouse_tweets", "Yemenimilitary_tweets",
+    "chigrl_tweets", "mfa_russia_tweets", "realDonaldTrump_tweets",
+    "sentdefender_tweets", "zerohedge_tweets"
+]
+
+df = pd.DataFrame(accounts, columns=["Twitter Accounts"])
+st.table(df)
+
+st.markdown("""
+- 🕒 **Timeframe:**  
+  Tweets are time-aligned with **market price data**—capturing price movement from **1 minute up to 2 days** after each tweet.""")
+
+timeframe = pd.DataFrame({
+    "Timeframe": [
+        "1 minute", "5 minutes", "15 minutes", "30 minutes",
+        "1 hour", "2 hours", "4 hours", "6 hours",
+        "12 hours", "1 day", "2 days"
+    ]
+})
+df2 = pd.DataFrame(timeframe)
+st.table(df2)
+
+st.markdown("""
+- 🧠 **Labeling Mechanism:**  
+  For each tweet, we computed the **market impact** based on price returns and assigned a **Buy / Neutral / Sell** label:
+    - **Buy:** Return > +5 basis points  
+    - **Sell:** Return < -5 basis points  
+    - **Neutral:** Between -5 and +5 basis points
+
+            
+- 🔍 **Structure of the Dataset (`tweet_market_impact.xlsx`):**
+  - `Tweet`: Raw tweet content  
+  - `Timestamp`: Time of tweet  
+  - `Twitter_acc`: Source Twitter account  
+  - `MI_*`: Market impact values over various horizons  
+    *(e.g., `MI_1min_MidClose`, `MI_5min_MidClose`, ..., `MI_2d_MidClose`)*
+
+            
+- 🧹 **Data Cleaning Includes:**
+  - Removing emojis and hyperlinks  
+  - Filtering out empty or non-informative tweets
+
+---
+
+Use the sidebar to explore model results:
+- XGBoost 📈  
+- LSTM 🧠  
+- MLP 🔬  
+- Random Forest 🌳
 """)
+
