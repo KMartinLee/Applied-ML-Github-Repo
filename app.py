@@ -59,10 +59,12 @@ st.markdown("""
 - 🧹 **Data Cleaning Includes:**
   - Removing emojis and hyperlinks  
   - Filtering out empty or non-informative tweets
+  - Removed hyperlinks
+  - Empty Tweet Removal          
 
 ---
 
-Use the sidebar to explore model results:
+Now, by using the sidebar, we are going to explore the different models and their results:
 - XGBoost 📈  
 - LSTM 🧠  
 - MLP 🔬  
