@@ -1,5 +1,9 @@
 import streamlit as st
 import pandas as pd
+from PIL import Image
+import os
+
+
 st.set_page_config(page_title="ML Dashboard", layout="wide")
 
 st.title("Market sentiment and market impact prediction models on crude oil prices")
@@ -55,7 +59,13 @@ st.markdown("""
   - `MI_*`: Market impact values over various horizons  
     *(e.g., `MI_1min_MidClose`, `MI_5min_MidClose`, ..., `MI_2d_MidClose`)*
 
-            
+  """)
+
+excel_screen_path = os.path.join("images", "Screenshot 2025-07-13 at 23.22.06.png")
+excel_screen = Image.open(excel_screen_path)
+st.image(excel_screen, caption="Excel Screenshot", use_container_width=True)
+
+st.markdown("""
 - 🧹 **Data Cleaning Includes:**
   - Removing emojis and hyperlinks  
   - Filtering out empty or non-informative tweets
