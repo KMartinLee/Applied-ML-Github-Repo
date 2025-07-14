@@ -4,6 +4,16 @@ import os
 
 st.title("Random Forest Model Visualisations")
 
+st.markdown("""Random Forest is an ensemble learning method that builds multiple decision trees and merges their predictions to improve accuracy and control overfitting. It is widely used for both classification and regression tasks. Each tree in the forest is trained on a random subset of the data and selects a random subset of features at each split. This randomness helps ensure diversity among trees, making the overall model more robust and less prone to noise.
+
+Random Forests aggregate the results of all individual trees (via majority vote for classification or average for regression), leading to more stable and generalisable predictions compared to a single decision tree.
+
+**Known for:**
+- Strong performance on structured/tabular data
+- Built-in feature importance evaluation
+- Robustness to overfitting and noise through ensembling
+- Minimal need for feature scaling or preprocessing
+""")
 # Accuracy of Random Forest
 accuracy_path = os.path.join("images", "Accuracy_of_RF.png")
 accuracy_img = Image.open(accuracy_path)

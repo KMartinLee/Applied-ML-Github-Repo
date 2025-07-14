@@ -5,11 +5,11 @@ import os
 st.title("XGBoost Model Visualisations")
 
 st.markdown("""
-    What is XGBoost?
+    What is XGBoost?\n\n
     XGBoost (Extreme Gradient Boosting) is a powerful machine learning algorithm based on decision trees. It is widely used for classification and regression tasks due to its speed and performance. XGBoost optimises the gradient boosting framework, making it efficient and effective for large datasets.
     It uses a gradient descent algorithm to minimise the loss function, allowing it to learn complex patterns in the data. XGBoost is particularly known for its ability to handle missing values and its robustness against overfitting.
-    
-    Known for:
+
+    **Known for:**
     - High accuracy
     - Fast training
     - Robustness to overfitting (via regularisation)
