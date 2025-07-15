@@ -7,8 +7,7 @@ st.title("Case Study")
 st.markdown("""
 1. Narrative Noise (Word Diversity) Over Time
 This section explores how the diversity (entropy) of words used in tweets has changed over time, indicating shifts in narrative focus and sentiment within the crude oil market.
-2. Cumulative Accounts on Oil Topics Over Time
-This section examines the total number of tweets related to oil topics over time, providing insights into the evolving conversation around crude oil.
+
 """)
 # Accuracy of LSTM
 
@@ -18,6 +17,10 @@ st.image(accuracy_img, caption="Cumulative Accounts on Oil topics over time", us
 
 st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
 
+st.markdown("""
+2. Cumulative Accounts on Oil Topics Over Time
+This section examines the total number of tweets related to oil topics over time, providing insights into the evolving conversation around crude oil.
+""")
 # Performance Heat Map of LSTM
 heatmap_path = os.path.join("images", "3.png")
 heatmap_img = Image.open(heatmap_path)
